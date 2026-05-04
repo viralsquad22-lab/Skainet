@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Skainet Workshop – Pantalla de identificación para acceso al sistema de gestión de joyería.">
+  <title>SKAINET – Identificación</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link href="https://unpkg.com/lucide-static@latest/font/lucide.css" rel="stylesheet">
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════
+       VISTA 1: LOGIN — Selección de Perfil
+       ═══════════════════════════════════════════════ -->
+
+  <div class="app-container" style="display:flex; justify-content:center; align-items:center; min-height:100vh;">
+    <div class="glass-panel animate-fade-in" style="max-width:400px; width:100%; margin:0 auto;">
+
+      <h2 class="gold-text text-center mb-30" style="font-size:1.2rem; letter-spacing:3px;">IDENTIFICACIÓN SKYNET</h2>
+
+      <!-- ── Fase 1: Selección de perfil ────── -->
+      <div id="phase-select" class="flex-col gap-15">
+        <p class="text-center text-muted" style="font-size:0.9rem; margin-bottom:10px;">Seleccione su perfil de acceso</p>
+
+        <!-- Equipo de Taller -->
+        <div class="mb-20">
+          <h4 class="gold-text uppercase ls-1" style="font-size:0.7rem; margin-bottom:10px;">EQUIPO DE TALLER</h4>
+          <div class="flex-col gap-10">
+            <button class="premium-btn" onclick="showPasswordPhase('Carlos M.', 'Joyero')">
+              <i class="lucide-user-circle" style="width:18px;height:18px;"></i> Carlos M.
+            </button>
+            <button class="premium-btn" onclick="showPasswordPhase('Andrés R.', 'Joyero')">
+              <i class="lucide-user-circle" style="width:18px;height:18px;"></i> Andrés R.
+            </button>
+            <button class="premium-btn" onclick="showPasswordPhase('María L.', 'Jefe de Taller')">
+              <i class="lucide-user-circle" style="width:18px;height:18px;"></i> María L.
+            </button>
+          </div>
+        </div>
+
+        <hr class="divider-thin">
+
+        <!-- Administración -->
+        <h4 class="text-muted uppercase ls-1" style="font-size:0.7rem; margin-bottom:10px;">ADMINISTRACIÓN CENTRAL</h4>
+        <div class="flex-col gap-10">
+          <button class="premium-btn" style="background:#1a1a1a; color:#fff; border:1px solid var(--gold);"
+                  onclick="showPasswordPhase('Viralsquad', 'Administrador')">
+            PANEL SUPERIOR (Viralsquad)
+          </button>
+          <button class="premium-btn" style="background:#222; color:#fff; border:1px solid #333;"
+                  onclick="showPasswordPhase('Laura G.', 'Administrador')">
+            ADMINISTRADORA (Laura G.)
+          </button>
+        </div>
+      </div>
+
+      <!-- ── Fase 2: Contraseña ─────────────── -->
+      <div id="phase-password" class="animate-fade-in" style="display:none;">
+        <div class="text-center mb-20">
+          <div style="width:60px; height:60px; border-radius:50%; border:2px solid var(--gold); margin:0 auto 10px; display:flex; align-items:center; justify-content:center;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20a6 6 0 0 0-12 0"/><circle cx="12" cy="10" r="4"/><circle cx="12" cy="12" r="10"/></svg>
+          </div>
+          <h3 id="login-name" style="color:#fff;">Carlos M.</h3>
+          <p id="login-role" class="text-muted" style="font-size:0.8rem;">Joyero</p>
+        </div>
+
+        <form onsubmit="event.preventDefault(); window.location.href='02-dashboard-admin.html';" class="flex-col gap-15">
+          <div style="background:rgba(0,0,0,0.5); border-radius:8px; padding:10px;">
+            <input type="password" placeholder="Contraseña" class="password-input" required autofocus>
+          </div>
+          <button type="submit" class="action-btn-gold" style="border-radius:4px;">INICIAR SESIÓN</button>
+          <button type="button" class="btn-ghost text-center" style="color:#666; font-size:0.8rem; margin-top:10px;"
+                  onclick="showSelectPhase()">
+            Volver a selección de perfil
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Navegación de boceto ────────────── -->
+  <nav style="position:fixed; bottom:0; left:0; right:0; background:rgba(0,0,0,0.9); border-top:1px solid #222; padding:10px 20px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; z-index:999;">
+    <a href="01-login.html" style="color:var(--gold); font-size:0.7rem; padding:4px 10px; border:1px solid var(--gold); border-radius:20px;">① Login</a>
+    <a href="02-dashboard-admin.html" style="color:#888; font-size:0.7rem; padding:4px 10px; border:1px solid #333; border-radius:20px;">② Dashboard Admin</a>
+    <a href="03-dashboard-joyero.html" style="color:#888; font-size:0.7rem; padding:4px 10px; border:1px solid #333; border-radius:20px;">③ Dashboard Joyero</a>
+    <a href="04-nuevo-pedido.html" style="color:#888; font-size:0.7rem; padding:4px 10px; border:1px solid #333; border-radius:20px;">④ Nuevo Pedido</a>
+    <a href="05-tracking.html" style="color:#888; font-size:0.7rem; padding:4px 10px; border:1px solid #333; border-radius:20px;">⑤ Tracking</a>
+  </nav>
+
+  <script>
+    function showPasswordPhase(name, role) {
+      document.getElementById('phase-select').style.display = 'none';
+      document.getElementById('phase-password').style.display = 'block';
+      document.getElementById('login-name').textContent = name;
+      document.getElementById('login-role').textContent = role;
+    }
+    function showSelectPhase() {
+      document.getElementById('phase-select').style.display = 'flex';
+      document.getElementById('phase-password').style.display = 'none';
+    }
+  </script>
+</body>
+</html>

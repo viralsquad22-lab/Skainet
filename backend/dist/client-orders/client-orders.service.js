@@ -8,10 +8,10 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ClientOrdersService = void 0;
 const common_1 = require("@nestjs/common");
+const notifications_service_1 = require("../notifications/notifications.service");
 let ClientOrdersService = class ClientOrdersService {
     notificationsService;
     orders = [];
@@ -52,6 +52,6 @@ let ClientOrdersService = class ClientOrdersService {
 exports.ClientOrdersService = ClientOrdersService;
 exports.ClientOrdersService = ClientOrdersService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [typeof (_a = typeof NotificationsService !== "undefined" && NotificationsService) === "function" ? _a : Object])
+    __metadata("design:paramtypes", [notifications_service_1.NotificationsService])
 ], ClientOrdersService);
 //# sourceMappingURL=client-orders.service.js.map
