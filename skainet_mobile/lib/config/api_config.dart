@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 
-// En emulador Android usa 10.0.2.2 para acceder al host.
-// En web (Chrome) usa localhost directamente.
-final String apiBaseUrl = kIsWeb ? 'http://localhost:3000' : 'http://10.0.2.2:3000';
+// En web (Chrome) usa localhost.
+// En móvil real usa la IP de tu PC en la red local.
+// Asegúrate de estar conectado a la misma red WiFi.
+final String apiBaseUrl = kIsWeb ? 'http://localhost:3000' : 'http://10.1.196.189:3000';
