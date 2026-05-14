@@ -1,6 +1,23 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 
-// En web (Chrome) usa localhost.
-// En móvil real usa la IP de tu PC en la red local.
-// Asegúrate de estar conectado a la misma red WiFi.
-final String apiBaseUrl = kIsWeb ? 'http://localhost:3000' : 'http://10.1.196.189:3000';
+// ══════════════════════════════════════════════════
+// CONFIGURACIÓN DE API - SKAINET WORKSHOP
+// ══════════════════════════════════════════════════
+//
+// INSTRUCCIONES:
+// 1. Despliega el backend en Render.com
+// 2. Copia la URL que te da Render (ej: https://skainet-backend-xxxx.onrender.com)
+// 3. Pégala aquí abajo reemplazando la URL actual
+//
+// NOTA: En la nube usa HTTPS, en local usa HTTP
+// ══════════════════════════════════════════════════
+
+/// URL del backend desplegado en Render.com
+/// ⚡ CAMBIA ESTA URL después de desplegar en Render
+const String _cloudUrl = 'https://skainet-backend.onrender.com';
+
+/// URL local para desarrollo en Chrome
+const String _localUrl = 'http://localhost:3000';
+
+/// Selecciona automáticamente la URL según la plataforma
+final String apiBaseUrl = kIsWeb ? _localUrl : _cloudUrl;
