@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SKAINET – Dashboard Joyero</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app-container">
+  <header class="site-header">
+    <div>
+      <h1 class="premium-title">SKYNET <span class="gold-text">WORKSHOP</span></h1>
+      <p class="text-gray">Sesión: Carlos M. (Joyero)</p>
+    </div>
+    <a href="01-login.html" class="btn-ghost">Cerrar Sesión</a>
+  </header>
+
+  <main class="main-grid">
+    <!-- ═══ COLUMNA IZQUIERDA ═══ -->
+    <div class="glass-panel">
+      <div class="text-center">
+        <h3 class="gold-text">Tu Estado Actual</h3>
+        <div style="margin:30px 0;">
+          <span class="status-badge status-available">Disponible</span>
+        </div>
+        <div class="flex-col gap-10">
+          <button class="premium-btn" style="background:var(--danger); color:#fff; width:100%;">SALIR DE TURNO</button>
+          <button class="premium-btn" style="background:var(--warning); color:#fff; width:100%;">EN PAUSA</button>
+        </div>
+
+        <!-- Panel de Fabricación (joyero) -->
+        <div style="margin-top:40px; border-top:0.5px solid rgba(212,175,55,0.2); padding-top:30px; text-align:left;">
+          <h3 class="gold-text text-center ls-1 mb-20" style="font-size:1rem;">PANEL DE FABRICACIÓN</h3>
+          <p class="text-center text-muted mb-20" style="font-size:0.8rem;">Toca un pedido para ver la orden de trabajo y avanzar su proceso.</p>
+          <div class="flex-col gap-10">
+            <div class="fab-panel expanded">
+              <div class="flex-row" style="justify-content:space-between;">
+                <div>
+                  <h4 class="gold-text" style="font-size:0.9rem; margin-bottom:4px;">Ana García</h4>
+                  <p class="text-muted" style="font-size:0.7rem;">CÓD: P-a1b2c3 | Argolla Matrimonio 18k</p>
+                </div>
+                <span class="tag-gold" style="background:rgba(212,175,55,0.2); border:none;">5. Pre-engaste</span>
+              </div>
+              <div class="instructions" style="margin-top:15px;">
+                <p class="text-gray" style="font-size:0.75rem; margin-bottom:6px;"><b>Instrucciones:</b> Argolla Matrimonio 18k — <b>Peso Est:</b> 4.5g</p>
+                <p style="font-size:0.8rem; color:var(--info); line-height:1.4;"><b>Acción:</b><br>Ahorcado inicial y preparación de las cajas para comprobar medidas de las gemas.</p>
+              </div>
+              <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:15px;">
+                <button class="step-chip completed">1. Diseño</button>
+                <button class="step-chip completed">2. Impresión</button>
+                <button class="step-chip completed">3. Casting</button>
+                <button class="step-chip completed">4. Limpieza</button>
+                <button class="step-chip active">5. Pre-engaste</button>
+                <button class="step-chip">6. Vulcanizado</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ COLUMNA DERECHA ═══ -->
+    <div class="glass-panel">
+      <!-- Despacho -->
+      <div class="animate-fade-in mb-40">
+        <div class="glass-panel minimalist-form">
+          <header class="form-header">
+            <h2 class="gold-text">Despacho de Material</h2>
+            <div class="total-badge">
+              <span class="label">BALANCE DE ENTREGA</span>
+              <span class="value">0.00<small>g</small></span>
+            </div>
+          </header>
+
+          <!-- Mensaje de límite alcanzado -->
+          <div class="text-center" style="padding:40px; color:#888;">
+            <p class="text-warning" style="font-size:1.2rem; margin-bottom:10px;">⚠️ LÍMITE DE MESA ALCANZADO</p>
+            <p>Ya tienes una pieza física bajo tu responsabilidad. Debes retornar el material antes de poder aceptar una nueva.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cierre de Seguridad -->
+      <div class="animate-fade-in mb-40">
+        <div class="glass-panel minimalist-form" style="border-left:4px solid var(--danger);">
+          <header class="form-header">
+            <h2 class="gold-text">Cierre de Seguridad (Retorno)</h2>
+            <div class="total-badge">
+              <span class="label">BALANCE DE RETORNO</span>
+              <span class="value">0.120<small>g</small></span>
+            </div>
+          </header>
+          <div class="selection-row">
+            <select class="minimal-select"><option>Carlos M. - AN-001</option></select>
+          </div>
+          <div class="weights-grid">
+            <div class="weight-box"><input type="number" value="3.20"><label>ANILLO FINAL</label></div>
+            <div class="weight-box"><input type="number" value="1.10"><label>PLASTILINA REC.</label></div>
+            <div class="weight-box"><input type="number" value="0.10"><label>BOLSA / RETAL</label></div>
+          </div>
+          <!-- Anomalía -->
+          <div class="animate-fade-in mt-20">
+            <p class="text-danger" style="font-size:0.8rem; margin-bottom:10px;">⚠️ ANOMALÍA DETECTADA: La merma supera los límites técnicos. Ingrese una explicación.</p>
+            <textarea class="minimal-select" style="width:100%; min-height:80px; border:1px solid var(--danger); padding:10px;" placeholder="Explicación o firma del incidente..."></textarea>
+          </div>
+          <div class="auth-box mt-20 mb-20"><label>CLAVE DE RECIBIDO:</label><input type="password" class="input-pin" placeholder="****"></div>
+          <button class="action-btn-gold" style="background:var(--danger); color:#fff;">✔ FINALIZAR ENTREGA Y DETENER TIEMPO</button>
+        </div>
+      </div>
+
+      <!-- Panel de Control Taller (visible para joyeros también) -->
+      <h2 class="gold-text mb-20">Panel de Control Taller</h2>
+      <div class="joyeros-grid">
+        <div class="glass-panel text-center" style="padding:20px; border-color:var(--warning);">
+          <div style="width:40px;height:40px;border-radius:50%;border:2px solid var(--gold);margin:0 auto 10px;display:flex;align-items:center;justify-content:center;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5"><path d="M18 20a6 6 0 0 0-12 0"/><circle cx="12" cy="10" r="4"/><circle cx="12" cy="12" r="10"/></svg></div>
+          <h4 class="mb-10">Carlos M.</h4>
+          <span class="status-badge status-working">En Proceso</span>
+          <div class="mt-10"><p class="gold-text" style="font-size:0.8rem;"><b>AN-001</b> | 4.52g</p><div class="mono fw-700 mt-10">01:23:45</div></div>
+        </div>
+        <div class="glass-panel text-center" style="padding:20px; border-color:var(--gold);">
+          <div style="width:40px;height:40px;border-radius:50%;border:2px solid var(--gold);margin:0 auto 10px;display:flex;align-items:center;justify-content:center;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5"><path d="M18 20a6 6 0 0 0-12 0"/><circle cx="12" cy="10" r="4"/><circle cx="12" cy="12" r="10"/></svg></div>
+          <h4 class="mb-10">Andrés R.</h4>
+          <span class="status-badge status-available">Disponible</span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Nav -->
+<nav style="position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.9);border-top:1px solid #222;padding:10px 20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;z-index:999;">
+  <a href="01-login.html" style="color:#888;font-size:0.7rem;padding:4px 10px;border:1px solid #333;border-radius:20px;">① Login</a>
+  <a href="02-dashboard-admin.html" style="color:#888;font-size:0.7rem;padding:4px 10px;border:1px solid #333;border-radius:20px;">② Dashboard Admin</a>
+  <a href="03-dashboard-joyero.html" style="color:var(--gold);font-size:0.7rem;padding:4px 10px;border:1px solid var(--gold);border-radius:20px;">③ Dashboard Joyero</a>
+  <a href="04-nuevo-pedido.html" style="color:#888;font-size:0.7rem;padding:4px 10px;border:1px solid #333;border-radius:20px;">④ Nuevo Pedido</a>
+  <a href="05-tracking.html" style="color:#888;font-size:0.7rem;padding:4px 10px;border:1px solid #333;border-radius:20px;">⑤ Tracking</a>
+</nav>
+<div style="height:60px;"></div>
+</body>
+</html>

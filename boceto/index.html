@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Usuarios - Joyería Skynet</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-overlay"></div>
+    
+    <div class="container">
+        <header>
+            <h1 class="premium-title">SKYNET <span>JEWELRY</span></h1>
+            <p class="subtitle">Control de Personal y Taller</p>
+        </header>
+
+        <main>
+            <section class="user-entry-panel">
+                <div class="glass-card">
+                    <h2><span class="gold-text">Ingresar</span> Nuevo Usuario</h2>
+                    <form id="userForm">
+                        <div class="input-group">
+                            <label for="userName">Nombre Completo</label>
+                            <input type="text" id="userName" placeholder="Ej: Juan Pérez" required>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="userRole">Rol en la Joyería</label>
+                            <select id="userRole" required>
+                                <option value="" disabled selected>Seleccione un rol...</option>
+                                <option value="Dueño">Dueño (Max 2)</option>
+                                <option value="Administrador">Administrador (Max 1)</option>
+                                <option value="Líder de Taller">Líder de Taller (Max 1)</option>
+                                <option value="Joyero">Joyero (Max 3)</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="userSpecialty">Especialidad</label>
+                            <input type="text" id="userSpecialty" placeholder="Ej: Engastado, Pulido...">
+                        </div>
+
+                        <button type="submit" class="btn-primary">Registrar Usuario</button>
+                    </form>
+                </div>
+            </section>
+
+            <section class="dashboard">
+                <div class="glass-card delivery-panel hidden" id="deliveryPanel">
+                    <h2>Entrega de Trabajo: <span id="targetJoyero" class="gold-text"></span></h2>
+                    <form id="deliveryForm">
+                        <div class="weight-inputs">
+                            <div class="input-group">
+                                <label>Peso Anillo (g)</label>
+                                <input type="number" step="0.01" id="weightAnillo" class="weight-input" placeholder="0.00" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Peso Plastilina (g)</label>
+                                <input type="number" step="0.01" id="weightPlastilina" class="weight-input" placeholder="0.00" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Peso Bolsa (g)</label>
+                                <input type="number" step="0.01" id="weightBolsa" class="weight-input" placeholder="0.00" required>
+                            </div>
+                        </div>
+                        <div class="total-display">
+                            <span>PESO TOTAL:</span>
+                            <span id="totalWeight" class="gold-text">0.00g</span>
+                        </div>
+                        <button type="submit" class="btn-primary">Iniciar Cronómetro</button>
+                        <button type="button" class="btn-secondary" id="cancelDelivery">Cancelar</button>
+                    </form>
+                </div>
+
+                <div class="role-grid">
+                    <!-- Dueños -->
+                    <div class="role-column" id="col-Dueño">
+                        <h3>Dueños <span class="counter">0/2</span></h3>
+                        <div class="user-list"></div>
+                    </div>
+                    <!-- Admin -->
+                    <div class="role-column" id="col-Administrador">
+                        <h3>Admin <span class="counter">0/1</span></h3>
+                        <div class="user-list"></div>
+                    </div>
+                    <!-- Líder -->
+                    <div class="role-column" id="col-Líder">
+                        <h3>Líder Taller <span class="counter">0/1</span></h3>
+                        <div class="user-list"></div>
+                    </div>
+                    <!-- Joyeros -->
+                    <div class="role-column" id="col-Joyero">
+                        <h3>Joyeros <span class="counter">0/3</span></h3>
+                        <div class="user-list"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="notification" class="hidden"></div>
+    <script src="script.js"></script>
+</body>
+</html>
