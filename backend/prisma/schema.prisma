@@ -1,0 +1,91 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                String    @id
+  name              String
+  role              String
+  status            String    @default("Fuera de Turno")
+  password          String
+  phone             String?
+  lastLogin         DateTime?
+  history           Json      @default("[]")
+  securityQuestions Json      @default("[]")
+}
+
+model Batch {
+  id          String   @id @default(uuid())
+  entryWeight Float
+  exitWeight  Float
+  ringsCount  Int
+  createdAt   DateTime @default(now())
+  rings       Ring[]
+}
+
+model Ring {
+  id        String   @id
+  name      String
+  status    String   @default("PENDIENTE")
+  securePin String   @default("0000")
+  createdAt DateTime @default(now())
+  batchId   String
+  batch     Batch    @relation(fields: [batchId], references: [id], onDelete: Cascade)
+}
+
+model WorkOrder {
+  id              String    @id @default(uuid())
+  ringId          String
+  ringName        String
+  receiverId      String
+  executorId      String
+  totalWeight     Float
+  status          String    @default("OPEN")
+  startTime       DateTime  @default(now())
+  endTime         DateTime?
+  durationMinutes Int?
+  loss            Float?
+  isAnomaly       Boolean   @default(false)
+  explanation     String?
+  weights         Json
+  providedPin     String
+}
+
+model ClientOrder {
+  id              String   @id @default(uuid())
+  shortId         String   @unique
+  clientName      String
+  email           String?
+  phone           String?
+  design          String
+  estimatedWeight Float
+  status          String   @default("En Espera")
+  stepIndex       Int      @default(0)
+  createdAt       DateTime @default(now())
+}
+
+model Alert {
+  id          String   @id @default(uuid())
+  type        String
+  message     String
+  severity    String   @default("WARNING")
+  timestamp   DateTime @default(now())
+  orderId     String?
+  jewelerName String
+}
+
+
+model Machine {
+  id                   String    @id
+  name                 String
+  type                 String    @default("LASER")
+  status               String    @default("OPERATIONAL")
+  cycleCount           Int       @default(0)
+  maintenanceThreshold Int       @default(500)
+  lastMaintenance      DateTime?
+}

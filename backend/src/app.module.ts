@@ -11,9 +11,12 @@ import { MachinesModule } from './machines/machines.module';
 import { RecoveryModule } from './recovery/recovery.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
+import { PrismaModule } from './prisma/prisma.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
+    PrismaModule,
     UsersModule, 
     BatchesModule, 
     OrdersModule, 
@@ -22,7 +25,8 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
     StatsModule,
     MachinesModule,
     RecoveryModule,
-    NotificationsModule
+    NotificationsModule,
+    AuthModule
   ],
   controllers: [AppController],
   providers: [AppService],

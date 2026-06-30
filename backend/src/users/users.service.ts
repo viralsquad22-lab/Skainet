@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 
 export enum UserRole {
   ADMIN = 'Administrador',
@@ -37,56 +38,63 @@ export interface User {
 }
 
 @Injectable()
-export class UsersService {
-  private users: User[] = [
-    { 
-      id: '1', 
-      name: 'Ramiro', 
-      role: UserRole.JOYERO, 
-      status: UserStatus.OFFLINE, 
-      password: '123', 
-      history: [],
-      securityQuestions: [
-        { question: '¿Cuál es el nombre de tu primera mascota?', answer: 'Toby' },
-        { question: '¿Cuál es tu comida favorita?', answer: 'Pizza' },
-        { question: '¿Cuál es tu ciudad de nacimiento?', answer: 'Cali' }
-      ]
-    },
-    { id: '2', name: 'Deysi', role: UserRole.JOYERO, status: UserStatus.OFFLINE, password: '123', history: [] },
-    { id: '3', name: 'Plata', role: UserRole.LIDER, status: UserStatus.OFFLINE, password: '123', history: [] },
-    { id: '4', name: 'Danna', role: UserRole.ADMIN, status: UserStatus.AVAILABLE, password: '123', phone: '+573000000001', history: [] },
-    { 
-      id: '5', 
-      name: 'Viralsquad', 
-      role: UserRole.ADMIN, 
-      status: UserStatus.AVAILABLE, 
-      password: 'admin', 
-      phone: '+573000000002', 
-      history: [],
-      securityQuestions: [
-        { question: '¿Cuál es el nombre de tu primera mascota?', answer: 'Toby' },
-        { question: '¿Cuál es tu comida favorita?', answer: 'Pizza' },
-        { question: '¿Cuál es tu ciudad de nacimiento?', answer: 'Medellin' }
-      ]
-    },
-    { id: '6', name: 'David', role: UserRole.DUENO, status: UserStatus.AVAILABLE, password: '123', phone: '+573000000000', history: [] },
-  ];
+export class UsersService implements OnModuleInit {
+  constructor(private readonly prisma: PrismaService) {}
 
-  findAll() {
-    return this.users.map(({ password, ...user }) => user);
-  }
-
-  findOne(id: string) {
-    const user = this.users.find(u => u.id === id);
-    if (user) {
-      const { password, ...rest } = user;
-      return { ...rest, password }; // Devolver la contraseña en findOne para administración
+  async onModuleInit() {
+    const count = await this.prisma.user.count();
+    if (count === 0) {
+      await this.prisma.user.createMany({
+        data: [
+          { 
+            id: '1', 
+            name: 'Ramiro', 
+            role: UserRole.JOYERO, 
+            status: UserStatus.OFFLINE, 
+            password: '123', 
+            history: [] as any,
+            securityQuestions: [
+              { question: '¿Cuál es el nombre de tu primera mascota?', answer: 'Toby' },
+              { question: '¿Cuál es tu comida favorita?', answer: 'Pizza' },
+              { question: '¿Cuál es tu ciudad de nacimiento?', answer: 'Cali' }
+            ] as any
+          },
+          { id: '2', name: 'Deysi', role: UserRole.JOYERO, status: UserStatus.OFFLINE, password: '123', history: [] as any, securityQuestions: [] as any },
+          { id: '3', name: 'Plata', role: UserRole.LIDER, status: UserStatus.OFFLINE, password: '123', history: [] as any, securityQuestions: [] as any },
+          { id: '4', name: 'Danna', role: UserRole.ADMIN, status: UserStatus.AVAILABLE, password: '123', phone: '+573000000001', history: [] as any, securityQuestions: [] as any },
+          { 
+            id: '5', 
+            name: 'Viralsquad', 
+            role: UserRole.ADMIN, 
+            status: UserStatus.AVAILABLE, 
+            password: 'admin', 
+            phone: '+573000000002', 
+            history: [] as any,
+            securityQuestions: [
+              { question: '¿Cuál es el nombre de tu primera mascota?', answer: 'Toby' },
+              { question: '¿Cuál es tu comida favorita?', answer: 'Pizza' },
+              { question: '¿Cuál es tu ciudad de nacimiento?', answer: 'Medellin' }
+            ] as any
+          },
+          { id: '6', name: 'David', role: UserRole.DUENO, status: UserStatus.AVAILABLE, password: '123', phone: '+573000000000', history: [] as any, securityQuestions: [] as any },
+        ]
+      });
+      console.log('Seed users completed successfully! 🌱');
     }
-    return null;
   }
 
-  validatePassword(id: string, pass: string) {
-    const user = this.users.find(u => u.id === id);
+  async findAll() {
+    const users = await this.prisma.user.findMany();
+    // Exclude password in list view
+    return users.map(({ password, ...user }) => user);
+  }
+
+  async findOne(id: string) {
+    return this.prisma.user.findUnique({ where: { id } });
+  }
+
+  async validatePassword(id: string, pass: string) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
     if (user && user.password === pass) {
       const { password, ...rest } = user;
       return rest;
@@ -94,74 +102,89 @@ export class UsersService {
     return null;
   }
 
-  updateStatus(id: string, status: UserStatus) {
-    const user = this.users.find(u => u.id === id);
-    if (user) {
-      user.status = status;
-      user.history.push({ status, timestamp: new Date() });
-      if (status === UserStatus.AVAILABLE) {
-        user.lastLogin = new Date();
-      }
-      return user;
+  async updateStatus(id: string, status: UserStatus) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) return null;
+
+    const history = Array.isArray(user.history) ? [...(user.history as any)] : [];
+    history.push({ status, timestamp: new Date().toISOString() });
+
+    const updateData: any = { 
+      status, 
+      history: history as any
+    };
+
+    if (status === UserStatus.AVAILABLE) {
+      updateData.lastLogin = new Date();
     }
-    return null;
+
+    return this.prisma.user.update({
+      where: { id },
+      data: updateData,
+    });
   }
 
-  create(userData: Partial<User>) {
+  async create(userData: Partial<User>) {
     if (!userData.id || !userData.name) {
       throw new Error('El ID y el Nombre son obligatorios');
     }
-    const existing = this.users.find(u => u.id === userData.id);
+    const existing = await this.prisma.user.findUnique({ where: { id: userData.id } });
     if (existing) {
       throw new Error('El ID de usuario ya existe');
     }
-    const newUser: User = {
-      id: userData.id,
-      name: userData.name,
-      role: userData.role || UserRole.JOYERO,
-      status: userData.status || UserStatus.OFFLINE,
-      password: userData.password || '123',
-      phone: userData.phone,
-      history: [],
-      securityQuestions: userData.securityQuestions || []
-    };
-    this.users.push(newUser);
-    return newUser;
+    return this.prisma.user.create({
+      data: {
+        id: userData.id,
+        name: userData.name,
+        role: userData.role || UserRole.JOYERO,
+        status: userData.status || UserStatus.OFFLINE,
+        password: userData.password || '123',
+        phone: userData.phone,
+        history: (userData.history || []) as any,
+        securityQuestions: (userData.securityQuestions || []) as any
+      }
+    });
   }
 
-  update(id: string, updateData: Partial<User>) {
-    const userIndex = this.users.findIndex(u => u.id === id);
-    if (userIndex === -1) return null;
+  async update(id: string, updateData: Partial<User>) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) return null;
 
-    const user = this.users[userIndex];
-    const updated = {
-      ...user,
-      ...updateData,
-      id: user.id, // Impedir cambiar el ID para no romper órdenes
-      history: user.history
-    };
-    this.users[userIndex] = updated;
-    return updated;
+    return this.prisma.user.update({
+      where: { id },
+      data: {
+        name: updateData.name,
+        role: updateData.role,
+        password: updateData.password,
+        phone: updateData.phone,
+        securityQuestions: updateData.securityQuestions as any
+      }
+    });
   }
 
-  remove(id: string) {
-    const userIndex = this.users.findIndex(u => u.id === id);
-    if (userIndex === -1) return false;
-    this.users.splice(userIndex, 1);
-    return true;
+  async remove(id: string) {
+    try {
+      await this.prisma.user.delete({ where: { id } });
+      return true;
+    } catch {
+      return false;
+    }
   }
 
-  validateRecovery(id: string, answers: string[]) {
-    const user = this.users.find(u => u.id === id);
-    if (!user || !user.securityQuestions || user.securityQuestions.length < 3) return null;
+  async validateRecovery(id: string, answers: string[]) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user || !user.securityQuestions) return null;
 
-    const match = user.securityQuestions.every((q, index) => {
+    const questions = user.securityQuestions as any[];
+    if (questions.length < 3) return null;
+
+    const match = questions.every((q, index) => {
       const provided = answers[index] || '';
       return q.answer.trim().toLowerCase() === provided.trim().toLowerCase();
     });
 
     if (match) {
-      return user; // Devuelve el usuario para poder mostrar la contraseña o restablecerla
+      return user;
     }
     return null;
   }

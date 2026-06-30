@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../config/theme.dart';
 import '../config/api_config.dart';
 import '../models/models.dart';
@@ -31,13 +32,13 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _login() async {
     if (_selectedUser == null || _passwordCtrl.text.isEmpty) return;
     final auth = context.read<AuthProvider>();
-    final success = await auth.login(_selectedUser!.id, _passwordCtrl.text);
+    final String password = _passwordCtrl.text;
+    _passwordCtrl.clear(); // Limpiar inmediatamente de la UI/Controlador para mitigar exposición en RAM
+    final success = await auth.login(_selectedUser!.id, password);
     if (!mounted) return;
     if (success) {
       context.read<WorkshopProvider>().startPolling();
-      Navigator.pushReplacement(context, MaterialPageRoute(
-        builder: (_) => auth.isAdmin ? const AdminDashboard() : const JoyeroDashboard(),
-      ));
+      context.go(auth.isAdmin ? '/admin' : '/joyero');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Contraseña incorrecta'), backgroundColor: AppColors.danger),
@@ -273,17 +274,20 @@ class _LoginScreenState extends State<LoginScreen> {
               foregroundColor: Colors.black,
               textStyle: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            onPressed: () {
+            onPressed: () async {
               if (controller.text.isNotEmpty) {
-                setApiBaseUrl(controller.text.trim());
+                final url = controller.text.trim();
+                await context.read<AuthProvider>().saveApiUrl(url);
                 context.read<AuthProvider>().fetchUsers(); // Re-fetch users list
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Servidor configurado: $apiBaseUrl'),
-                    backgroundColor: AppColors.success,
-                  ),
-                );
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Servidor configurado: $url'),
+                      backgroundColor: AppColors.success,
+                    ),
+                  );
+                }
               }
             },
             child: const Text('Guardar'),

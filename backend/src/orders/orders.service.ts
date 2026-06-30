@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, OnModuleInit } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { UsersService, UserStatus } from '../users/users.service';
 import { BatchesService } from '../batches/batches.service';
 import { AlertsService } from '../alerts/alerts.service';
@@ -12,7 +13,7 @@ export interface OrderWeights {
 export interface Order {
   id: string;
   ringId: string;
-  ringName: string; // Nombre amigable para el joyero
+  ringName: string;
   receiverId: string;
   executorId: string;
   weights: OrderWeights;
@@ -29,103 +30,75 @@ export interface Order {
 }
 
 @Injectable()
-export class OrdersService {
-  private orders: Order[] = [
-    {
-      id: 'ORD-101',
-      ringId: 'B-101-R1',
-      ringName: 'Anillo 1 (Lote B-101)',
-      receiverId: '4',
-      executorId: '1',
-      weights: { anillo: 10.20, plastilina: 1.50, bolsa: 0.80 },
-      totalWeight: 12.50,
-      startTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 - 3 * 60 * 60 * 1000),
-      endTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 - 2 * 60 * 60 * 1000 - 15 * 60 * 1000),
-      durationMinutes: 45,
-      status: 'CLOSED',
-      finalWeights: { anillo: 10.18, plastilina: 1.50, bolsa: 0.80 },
-      finalTotalWeight: 12.48,
-      loss: 0.02,
-      isAnomaly: false
-    },
-    {
-      id: 'ORD-102',
-      ringId: 'B-101-R2',
-      ringName: 'Anillo 2 (Lote B-101)',
-      receiverId: '4',
-      executorId: '2',
-      weights: { anillo: 6.10, plastilina: 1.20, bolsa: 0.90 },
-      totalWeight: 8.20,
-      startTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 - 2 * 60 * 60 * 1000),
-      endTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 - 45 * 60 * 1000),
-      durationMinutes: 75,
-      status: 'CLOSED',
-      finalWeights: { anillo: 6.08, plastilina: 1.20, bolsa: 0.90 },
-      finalTotalWeight: 8.18,
-      loss: 0.02,
-      isAnomaly: false
-    },
-    {
-      id: 'ORD-103',
-      ringId: 'B-101-R3',
-      ringName: 'Anillo 3 (Lote B-101)',
-      receiverId: '4',
-      executorId: '3',
-      weights: { anillo: 12.50, plastilina: 1.80, bolsa: 0.70 },
-      totalWeight: 15.00,
-      startTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 - 4 * 60 * 60 * 1000),
-      endTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 - 2 * 60 * 60 * 1000),
-      durationMinutes: 120,
-      status: 'CLOSED',
-      finalWeights: { anillo: 12.38, plastilina: 1.80, bolsa: 0.70 },
-      finalTotalWeight: 14.88,
-      loss: 0.12,
-      isAnomaly: true,
-      explanation: 'Porosidad alta en fundición requirió desbaste y pulido extra profundo'
-    },
-    {
-      id: 'ORD-104',
-      ringId: 'B-101-R4',
-      ringName: 'Anillo 4 (Lote B-101)',
-      receiverId: '4',
-      executorId: '1',
-      weights: { anillo: 9.00, plastilina: 1.30, bolsa: 0.80 },
-      totalWeight: 11.10,
-      startTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 - 1 * 60 * 60 * 1000),
-      endTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 - 25 * 60 * 1000),
-      durationMinutes: 35,
-      status: 'CLOSED',
-      finalWeights: { anillo: 8.98, plastilina: 1.30, bolsa: 0.80 },
-      finalTotalWeight: 11.08,
-      loss: 0.02,
-      isAnomaly: false
-    },
-    {
-      id: 'ORD-105',
-      ringId: 'B-102-R1',
-      ringName: 'Anillo 1 (Lote B-102)',
-      receiverId: '4',
-      executorId: '2',
-      weights: { anillo: 7.20, plastilina: 1.50, bolsa: 0.80 },
-      totalWeight: 9.50,
-      startTime: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000 - 5 * 60 * 60 * 1000),
-      endTime: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000 - 4 * 60 * 60 * 1000 - 10 * 60 * 1000),
-      durationMinutes: 50,
-      status: 'CLOSED',
-      finalWeights: { anillo: 7.17, plastilina: 1.50, bolsa: 0.80 },
-      finalTotalWeight: 9.47,
-      loss: 0.03,
-      isAnomaly: false
-    }
-  ];
-
+export class OrdersService implements OnModuleInit {
   constructor(
+    private readonly prisma: PrismaService,
     private readonly usersService: UsersService,
     private readonly batchesService: BatchesService,
     private readonly alertsService: AlertsService,
   ) {}
 
-  create(data: {
+  async onModuleInit() {
+    const count = await this.prisma.workOrder.count();
+    if (count === 0) {
+      await this.prisma.workOrder.createMany({
+        data: [
+          {
+            id: 'ORD-101',
+            ringId: 'B-101-R1',
+            ringName: 'Anillo 1 (Lote B-101)',
+            receiverId: '4',
+            executorId: '1',
+            weights: { anillo: 10.20, plastilina: 1.50, bolsa: 0.80 } as any,
+            totalWeight: 12.50,
+            startTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 - 3 * 60 * 60 * 1000),
+            endTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 - 2 * 60 * 60 * 1000 - 15 * 60 * 1000),
+            durationMinutes: 45,
+            status: 'CLOSED',
+            loss: 0.02,
+            isAnomaly: false,
+            providedPin: '1111'
+          },
+          {
+            id: 'ORD-102',
+            ringId: 'B-101-R2',
+            ringName: 'Anillo 2 (Lote B-101)',
+            receiverId: '4',
+            executorId: '2',
+            weights: { anillo: 6.10, plastilina: 1.20, bolsa: 0.90 } as any,
+            totalWeight: 8.20,
+            startTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 - 2 * 60 * 60 * 1000),
+            endTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 - 45 * 60 * 1000),
+            durationMinutes: 75,
+            status: 'CLOSED',
+            loss: 0.02,
+            isAnomaly: false,
+            providedPin: '2222'
+          },
+          {
+            id: 'ORD-103',
+            ringId: 'B-101-R3',
+            ringName: 'Anillo 3 (Lote B-101)',
+            receiverId: '4',
+            executorId: '3',
+            weights: { anillo: 12.50, plastilina: 1.80, bolsa: 0.70 } as any,
+            totalWeight: 15.00,
+            startTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 - 4 * 60 * 60 * 1000),
+            endTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 - 2 * 60 * 60 * 1000),
+            durationMinutes: 120,
+            status: 'CLOSED',
+            loss: 0.12,
+            isAnomaly: true,
+            explanation: 'Porosidad alta en fundición requirió desbaste y pulido extra profundo',
+            providedPin: '3333'
+          }
+        ]
+      });
+      console.log('Seed work orders completed successfully! 📋');
+    }
+  }
+
+  async create(data: {
     ringId: string;
     receiverId: string;
     executorId: string;
@@ -134,23 +107,21 @@ export class OrdersService {
   }) {
     const { ringId, receiverId, executorId, weights } = data;
 
-    // Validar usuario
-    const receiver = this.usersService.findOne(receiverId);
-    const executor = this.usersService.findOne(executorId);
+    const receiver = await this.usersService.findOne(receiverId);
+    const executor = await this.usersService.findOne(executorId);
 
     if (!receiver || !executor) {
       throw new NotFoundException('Uno o ambos joyeros no fueron encontrados');
     }
 
-    // Work-In-Progress Limit: A jeweler can only have 1 active ring at a time
-    const activeOrder = this.orders.find(o => o.executorId === executorId && o.status === 'OPEN');
+    const activeOrder = await this.prisma.workOrder.findFirst({
+      where: { executorId, status: 'OPEN' }
+    });
     if (activeOrder) {
-      throw new BadRequestException('LÍMITE DE TRABAJO EXCEDIDO: El joyero seleccionado ya tiene una pieza en mesa. Debe terminar (retornar material) antes de recibir una nueva.');
+      throw new BadRequestException('LÍMITE DE TRABAJO EXCEDIDO: El joyero seleccionado ya tiene una pieza en mesa. Debe terminar antes de recibir una nueva.');
     }
 
-    // Validar anillo (en una implementación real buscaríamos en BatchesService)
-    const rings = this.batchesService.findPendingRings();
-    const ring = rings.find(r => r.id === ringId);
+    const ring = await this.batchesService.getRingById(ringId);
     if (!ring) {
       throw new BadRequestException('El anillo no está disponible o no existe');
     }
@@ -161,45 +132,57 @@ export class OrdersService {
 
     const totalWeight = Number(weights.anillo) + Number(weights.plastilina) + Number(weights.bolsa);
 
-    const newOrder: Order = {
-      id: `ORD-${Date.now()}`,
-      ringId,
-      ringName: ring?.name || 'Pieza',
-      receiverId,
-      executorId,
-      weights: {
-        anillo: Number(weights.anillo),
-        plastilina: Number(weights.plastilina),
-        bolsa: Number(weights.bolsa)
-      },
-      totalWeight,
-      startTime: new Date(),
-      status: 'OPEN',
-    };
+    const orderId = `ORD-${Date.now()}`;
+    const newOrder = await this.prisma.workOrder.create({
+      data: {
+        id: orderId,
+        ringId,
+        ringName: ring.name,
+        receiverId,
+        executorId,
+        weights: {
+          anillo: Number(weights.anillo),
+          plastilina: Number(weights.plastilina),
+          bolsa: Number(weights.bolsa)
+        },
+        totalWeight,
+        status: 'OPEN',
+        providedPin: data.providedPin || ''
+      }
+    });
 
-    // Actualizar estados
-    this.usersService.updateStatus(executorId, UserStatus.WORKING);
-    ring.status = 'ASSIGNED';
-    
-    this.orders.push(newOrder);
+    await this.usersService.updateStatus(executorId, UserStatus.WORKING);
+    await this.batchesService.updateRingStatus(ringId, 'ASSIGNED');
+
     return newOrder;
   }
 
-  findAll() {
-    this.checkTimeAlerts();
-    return this.orders;
+  async findAll() {
+    await this.checkTimeAlerts();
+    const orders = await this.prisma.workOrder.findMany();
+    return orders.map(o => ({
+      ...o,
+      weights: o.weights as any
+    }));
   }
 
-  findActiveByExecutor(executorId: string) {
-    return this.orders.find(o => o.executorId === executorId && o.status === 'OPEN');
+  async findActiveByExecutor(executorId: string) {
+    const order = await this.prisma.workOrder.findFirst({
+      where: { executorId, status: 'OPEN' }
+    });
+    if (!order) return null;
+    return {
+      ...order,
+      weights: order.weights as any
+    };
   }
 
-  closeOrder(orderId: string, finalWeights: OrderWeights, explanation?: string, providedPin?: string) {
-    const order = this.orders.find(o => o.id === orderId);
+  async closeOrder(orderId: string, finalWeights: OrderWeights, explanation?: string, providedPin?: string) {
+    const order = await this.prisma.workOrder.findUnique({ where: { id: orderId } });
     if (!order) throw new NotFoundException('Orden no encontrada');
     if (order.status === 'CLOSED') throw new BadRequestException('La orden ya está cerrada');
 
-    const ring = this.batchesService.getRingById(order.ringId);
+    const ring = await this.batchesService.getRingById(order.ringId);
     if (!ring) throw new BadRequestException('Pieza no encontrada en lotes');
     if (ring.securePin !== providedPin && providedPin !== 'master') {
       throw new BadRequestException('Clave secreta incorrecta para retornar pieza');
@@ -208,7 +191,6 @@ export class OrdersService {
     const finalTotal = Number(finalWeights.anillo) + Number(finalWeights.plastilina) + Number(finalWeights.bolsa);
     const loss = Number((order.totalWeight - finalTotal).toFixed(3));
     
-    // Tolerancia Técnica: 0.05g (puedes ajustarlo luego)
     const TOLERANCE = 0.05;
     const isAnomaly = loss > TOLERANCE;
 
@@ -216,31 +198,32 @@ export class OrdersService {
       throw new BadRequestException('Se requiere una explicación para la anomalía de peso');
     }
 
-    order.finalWeights = finalWeights;
-    order.finalTotalWeight = finalTotal;
-    order.loss = loss;
-    order.isAnomaly = isAnomaly;
-    order.explanation = explanation;
-    order.endTime = new Date();
-    order.status = 'CLOSED';
+    const endTime = new Date();
+    const diff = endTime.getTime() - order.startTime.getTime();
+    const durationMinutes = Math.max(1, Math.floor(diff / 60000));
 
-    // Calcular duración y liberar joyero
-    const diff = order.endTime.getTime() - order.startTime.getTime();
-    order.durationMinutes = Math.floor(diff / 60000);
-    this.usersService.updateStatus(order.executorId, UserStatus.AVAILABLE);
+    // Update Ring: Generate new secure pin
+    const newSecurePin = Math.floor(1000 + Math.random() * 9000).toString();
+    await this.batchesService.updateRingStatus(order.ringId, 'PENDING', newSecurePin);
 
-    // DEVOLUCIÓN A MESA / TRANSFERENCIA:
-    // El anillo vuelve a estar disponible con un nuevo PIN para el siguiente paso
-    ring.status = 'PENDING';
-    ring.securePin = Math.floor(1000 + Math.random() * 9000).toString();
-    
-    // Return order and the new pin
-    (order as any).newGeneratedPin = ring.securePin;
+    // Update order
+    const updatedOrder = await this.prisma.workOrder.update({
+      where: { id: orderId },
+      data: {
+        status: 'CLOSED',
+        endTime,
+        durationMinutes,
+        loss,
+        isAnomaly,
+        explanation
+      }
+    });
 
-    // DISPARADOR DE ALERTA DE PESO ( Vigilante Digital )
+    await this.usersService.updateStatus(order.executorId, UserStatus.AVAILABLE);
+
     if (isAnomaly) {
-      const executor = this.usersService.findOne(order.executorId);
-      this.alertsService.createAlert({
+      const executor = await this.usersService.findOne(order.executorId);
+      await this.alertsService.createAlert({
         type: 'WEIGHT',
         severity: 'CRITICAL',
         jewelerName: executor?.name || 'Desconocido',
@@ -249,25 +232,27 @@ export class OrdersService {
       });
     }
 
-    return order;
+    return {
+      ...updatedOrder,
+      newGeneratedPin: newSecurePin
+    };
   }
 
-  private checkTimeAlerts() {
-    const MAX_MINUTES = 120; // 2 horas
-    this.orders.forEach(o => {
-      if (o.status === 'OPEN') {
-        const diff = (Date.now() - o.startTime.getTime()) / 60000;
-        if (diff > MAX_MINUTES) {
-          const jeweler = this.usersService.findOne(o.executorId);
-          this.alertsService.createAlert({
-            type: 'TIME',
-            severity: 'WARNING',
-            jewelerName: jeweler?.name || 'Desconocido',
-            message: `TIEMPO EXCEDIDO: El joyero lleva ${Math.floor(diff)} min con la pieza ${o.ringName}.`,
-            orderId: o.id
-          });
-        }
+  private async checkTimeAlerts() {
+    const MAX_MINUTES = 120;
+    const openOrders = await this.prisma.workOrder.findMany({ where: { status: 'OPEN' } });
+    for (const o of openOrders) {
+      const diff = (Date.now() - o.startTime.getTime()) / 60000;
+      if (diff > MAX_MINUTES) {
+        const jeweler = await this.usersService.findOne(o.executorId);
+        await this.alertsService.createAlert({
+          type: 'TIME',
+          severity: 'WARNING',
+          jewelerName: jeweler?.name || 'Desconocido',
+          message: `TIEMPO EXCEDIDO: El joyero lleva ${Math.floor(diff)} min con la pieza ${o.ringName}.`,
+          orderId: o.id
+        });
       }
-    });
+    }
   }
 }

@@ -5,6 +5,7 @@ class User {
   final String status;
   final String? lastLogin;
   final List<Map<String, dynamic>>? history;
+  final String? phone;
 
   User({
     required this.id,
@@ -13,18 +14,29 @@ class User {
     required this.status,
     this.lastLogin,
     this.history,
+    this.phone,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
+    List<Map<String, dynamic>>? parsedHistory;
+    try {
+      if (json['history'] != null) {
+        if (json['history'] is List) {
+          parsedHistory = (json['history'] as List)
+              .map((item) => Map<String, dynamic>.from(item as Map))
+              .toList();
+        }
+      }
+    } catch (_) {}
+
     return User(
-      id: json['id'] ?? '',
+      id: json['id']?.toString() ?? '',
       name: json['name'] ?? '',
       role: json['role'] ?? '',
       status: json['status'] ?? 'Fuera de Turno',
-      lastLogin: json['lastLogin'],
-      history: json['history'] != null
-          ? List<Map<String, dynamic>>.from(json['history'])
-          : null,
+      lastLogin: json['lastLogin']?.toString(),
+      history: parsedHistory,
+      phone: json['phone']?.toString(),
     );
   }
 
@@ -156,13 +168,15 @@ class ClientOrder {
   });
 
   factory ClientOrder.fromJson(Map<String, dynamic> json) {
+    final rawStep = json['stepIndex'] ?? json['currentStepIndex'] ?? 0;
+    final int step = rawStep is int ? rawStep : (int.tryParse(rawStep.toString()) ?? 0);
     return ClientOrder(
-      id: json['id'] ?? '',
+      id: json['id'] ?? json['shortId'] ?? '',
       clientName: json['clientName'] ?? '',
       design: json['design'] ?? '',
       estimatedWeight: (json['estimatedWeight'] ?? 0).toDouble(),
       status: json['status'] ?? 'PENDING',
-      currentStepIndex: json['currentStepIndex'] ?? 0,
+      currentStepIndex: step,
       email: json['email'],
       phone: json['phone'],
     );

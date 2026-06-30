@@ -11,15 +11,16 @@ export class StatsService {
     private readonly alertsService: AlertsService,
   ) {}
 
-  getGeneralStats() {
-    const orders = this.ordersService.findAll();
+  async getGeneralStats() {
+    const orders = await this.ordersService.findAll();
     const closedOrders = orders.filter(o => o.status === 'CLOSED');
     
     // 1. Merma Acumulada
     const totalLoss = closedOrders.reduce((sum, o) => sum + (o.loss || 0), 0);
     
     // 2. Ranking de Productividad (Promedio minutos por pieza por joyero)
-    const joyeros = this.usersService.findAll().filter(u => u.role === 'Joyero');
+    const allUsers = await this.usersService.findAll();
+    const joyeros = allUsers.filter(u => u.role === 'Joyero');
     const ranking = joyeros.map(j => {
       const jOrders = closedOrders.filter(o => o.executorId === j.id);
       const avgMinutes = jOrders.length > 0 
@@ -33,7 +34,7 @@ export class StatsService {
     }).sort((a,b) => (a.avgMinutes || 999) - (b.avgMinutes || 999));
 
     // 3. Balance de Seguridad
-    const alerts = this.alertsService.findAll();
+    const alerts = await this.alertsService.findAll();
     const incidentCount = alerts.filter(a => a.severity === 'CRITICAL').length;
 
     return {
@@ -45,3 +46,4 @@ export class StatsService {
     };
   }
 }
+

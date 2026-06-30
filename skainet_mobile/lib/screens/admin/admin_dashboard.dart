@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
@@ -8,6 +9,7 @@ import '../../widgets/widgets.dart';
 import '../login_screen.dart';
 import '../client_order_form.dart';
 import '../tracking_screen.dart';
+import 'user_management_screen.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -32,6 +34,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
   String? _selectedRingId;
   String? _selectedExecutorId;
   String? _selectedReturnOrderId;
+  String? _expandedClientOrderId;
+  int _currentIndex = 0;
 
   @override
   void initState() {
@@ -42,7 +46,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
   void _logout() {
     context.read<WorkshopProvider>().stopPolling();
     context.read<AuthProvider>().logout();
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
   }
 
   @override
@@ -57,30 +60,33 @@ class _AdminDashboardState extends State<AdminDashboard> {
           gradient: RadialGradient(center: Alignment.topRight, radius: 1.5, colors: [Color(0xFF1A1A1A), Colors.black]),
         ),
         child: SafeArea(
-          child: CustomScrollView(
-            slivers: [
-              // ── Header ──
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        RichText(text: const TextSpan(children: [
-                          TextSpan(text: 'SKYNET ', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: 3, color: Colors.white)),
-                          TextSpan(text: 'WORKSHOP', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: 3, color: AppColors.gold)),
-                        ])),
-                        const SizedBox(height: 4),
-                        Text('Sesión: ${auth.currentUser?.name ?? ''} (Admin)', style: const TextStyle(color: AppColors.textGray, fontSize: 13)),
-                      ]),
-                      IconButton(onPressed: _logout, icon: const Icon(Icons.logout, color: AppColors.gold)),
-                    ],
-                  ),
+          child: Column(
+            children: [
+              // ── Fixed Header ──
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      RichText(text: const TextSpan(children: [
+                        TextSpan(text: 'SKYNET ', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: 3, color: Colors.white)),
+                        TextSpan(text: 'WORKSHOP', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: 3, color: AppColors.gold)),
+                      ])),
+                      const SizedBox(height: 4),
+                      Text('Sesión: ${auth.currentUser?.name ?? ''} (Admin)', style: const TextStyle(color: AppColors.textGray, fontSize: 13)),
+                    ]),
+                    IconButton(onPressed: _logout, icon: const Icon(Icons.logout, color: AppColors.gold)),
+                  ],
                 ),
               ),
 
-              SliverPadding(
+              // ── Active Body ──
+              Expanded(
+                child: _currentIndex == 0
+                    ? CustomScrollView(
+                        slivers: [
+                          SliverPadding(
                 padding: const EdgeInsets.all(20),
                 sliver: SliverList(delegate: SliverChildListDelegate([
                   // ── Alerts ──
@@ -333,9 +339,51 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   ),
                   const SizedBox(height: 80),
                 ])),
+              )
+            ])
+                    : _currentIndex == 1
+                        ? const UserManagementScreen()
+                        : _currentIndex == 2
+                            ? _buildReportsTab(ws, auth)
+                            : _buildCustomJobsTab(cp),
               ),
             ],
           ),
+        ),
+      ),
+      bottomNavigationBar: Theme(
+        data: Theme.of(context).copyWith(
+          canvasColor: AppColors.cardBg,
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: (index) => setState(() => _currentIndex = index),
+          selectedItemColor: AppColors.gold,
+          unselectedItemColor: AppColors.textMuted,
+          showUnselectedLabels: true,
+          type: BottomNavigationBarType.fixed,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard_outlined),
+              activeIcon: Icon(Icons.dashboard),
+              label: 'Dashboard',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.people_outline),
+              activeIcon: Icon(Icons.people),
+              label: 'Personal',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.analytics_outlined),
+              activeIcon: Icon(Icons.analytics),
+              label: 'Reportes',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.diamond_outlined),
+              activeIcon: Icon(Icons.diamond),
+              label: 'Personalizados',
+            ),
+          ],
         ),
       ),
     );
@@ -389,6 +437,275 @@ class _AdminDashboardState extends State<AdminDashboard> {
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()), backgroundColor: AppColors.danger));
     }
+  }
+
+  Widget _buildReportsTab(WorkshopProvider ws, AuthProvider auth) {
+    final closed = ws.orders.where((o) => o.status == 'CLOSED' || !o.isOpen).toList();
+    return RefreshIndicator(
+      onRefresh: () => ws.fetchAll(),
+      child: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          const SectionHeader(title: 'CENTRO DE REPORTES', emoji: '📊'),
+          const Text('Descarga y auditoría general de mermas y asistencia técnica.', style: TextStyle(color: AppColors.textGray, fontSize: 13)),
+          const SizedBox(height: 20),
+          
+          GridView.count(
+            crossAxisCount: 2, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+            crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 1.8,
+            children: [
+              StatCard(label: 'MERMA TOTAL', value: '${ws.stats.totalLoss}g', valueColor: AppColors.gold),
+              StatCard(label: 'REPORTADAS', value: '${ws.stats.incidentCount}', valueColor: ws.stats.incidentCount > 0 ? AppColors.danger : Colors.white),
+              StatCard(label: 'TERMINADAS', value: '${ws.stats.totalProduced}', valueColor: Colors.white),
+              StatCard(label: 'EN MESA', value: '${ws.stats.activeWork}', valueColor: AppColors.success),
+            ],
+          ),
+          const SizedBox(height: 24),
+          
+          const Text('CENTRO DE DESCARGAS (CSV)', style: TextStyle(fontSize: 11, color: AppColors.textMuted, letterSpacing: 1)),
+          const SizedBox(height: 10),
+          
+          GoldButton(
+            label: 'EXPORTAR REPORTES OPERATIVOS',
+            icon: Icons.download_for_offline_outlined,
+            onPressed: () => _exportOperations(ws, auth),
+          ),
+          const SizedBox(height: 10),
+          GoldButton(
+            label: 'EXPORTAR HISTORIAL DE TURNOS',
+            icon: Icons.history_toggle_off,
+            onPressed: () => _exportAttendance(auth),
+          ),
+          
+          const SizedBox(height: 32),
+          const Text('HISTORIAL RECIENTE', style: TextStyle(fontSize: 11, color: AppColors.textMuted, letterSpacing: 1)),
+          const SizedBox(height: 10),
+          
+          if (closed.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 32),
+              child: Center(child: Text('No hay operaciones terminadas registradas.', style: TextStyle(color: AppColors.textMuted))),
+            )
+          else
+            ...closed.map((o) {
+              final name = auth.getUserName(o.executorId) ?? 'Desconocido';
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.cardBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.borderGlass),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(o.ringName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 4),
+                        Text('Por: $name', style: const TextStyle(color: AppColors.textGray, fontSize: 12)),
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text('${o.loss ?? 0}g merma', style: TextStyle(color: (o.loss ?? 0) > 0.05 ? AppColors.danger : AppColors.success, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 4),
+                        Text('${o.durationMinutes ?? 0} min', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }),
+          const SizedBox(height: 80),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCustomJobsTab(ClientProvider cp) {
+    final activeOrders = cp.activeOrders;
+    return RefreshIndicator(
+      onRefresh: () => cp.fetchClientOrders(),
+      child: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          const SectionHeader(title: 'TRABAJOS PERSONALIZADOS', emoji: '💎'),
+          const Text('Monitoreo e interactividad para el avance de piezas bajo pedido.', style: TextStyle(color: AppColors.textGray, fontSize: 13)),
+          const SizedBox(height: 20),
+          
+          if (activeOrders.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 40),
+              child: Center(child: Text('No hay trabajos personalizados en curso.', style: TextStyle(color: AppColors.textMuted))),
+            )
+          else
+            ...activeOrders.map((order) {
+              final isExpanded = _expandedClientOrderId == order.id;
+              final currentIndex = order.currentStepIndex;
+              final steps = StepProgress.steps;
+              
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.cardBg,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: isExpanded ? AppColors.gold : AppColors.borderGlass),
+                ),
+                child: InkWell(
+                  onTap: () => setState(() => _expandedClientOrderId = isExpanded ? null : order.id),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(order.clientName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                                  const SizedBox(height: 4),
+                                  Text('CÓD: P-${order.shortId} | ${order.design}', style: const TextStyle(color: AppColors.textGray, fontSize: 12)),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.goldDim,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '${currentIndex + 1}. ${steps[currentIndex]}',
+                                style: const TextStyle(color: AppColors.gold, fontSize: 11, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (isExpanded) ...[
+                          const Divider(color: Colors.white12, height: 24),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.black38,
+                              borderRadius: BorderRadius.circular(8),
+                              border: const Border(left: BorderSide(color: Colors.blueAccent, width: 3)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                RichText(
+                                  text: TextSpan(
+                                    style: const TextStyle(fontSize: 12, color: AppColors.textGray),
+                                    children: [
+                                      const TextSpan(text: 'Instrucciones: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                                      TextSpan(text: order.design),
+                                      const TextSpan(text: ' — Peso estimado: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                                      TextSpan(text: '${order.estimatedWeight}g'),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          StepProgress(
+                            currentStep: order.currentStepIndex,
+                            interactive: true,
+                            onStepTap: (index) async {
+                              try {
+                                await cp.updateStep(order.id, index);
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                    content: Text('Paso actualizado a: ${steps[index]} ✅'),
+                                    backgroundColor: AppColors.success,
+                                  ));
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                    content: Text('Error actualizando paso: $e'),
+                                    backgroundColor: AppColors.danger,
+                                  ));
+                                }
+                              }
+                            },
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+          const SizedBox(height: 80),
+        ],
+      ),
+    );
+  }
+
+  void _exportOperations(WorkshopProvider ws, AuthProvider auth) {
+    final closed = ws.orders.where((o) => o.status == 'CLOSED' || !o.isOpen).toList();
+    if (closed.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("No hay operaciones cerradas para exportar.")));
+      return;
+    }
+    String csv = "ID Orden,Joyero,Pieza,Fecha Inicio,Fecha Fin,Duracion (Min),Peso Inicial (g),Merma (g)\r\n";
+    for (final o in closed) {
+      final jewelerName = auth.getUserName(o.executorId) ?? 'Desconocido';
+      final row = [
+        o.id,
+        jewelerName,
+        '"${o.ringName}"',
+        o.startTime,
+        o.endTime ?? '',
+        o.durationMinutes ?? 0,
+        o.totalWeight,
+        o.loss ?? 0,
+      ].join(",");
+      csv += "$row\r\n";
+    }
+    Clipboard.setData(ClipboardData(text: csv));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text("Reporte de operaciones copiado al portapapeles en formato CSV 📋"),
+      backgroundColor: AppColors.success,
+    ));
+  }
+
+  void _exportAttendance(AuthProvider auth) {
+    String csv = "Joyero,Rol,Estado,Fecha y Hora Registro\r\n";
+    bool hasRecords = false;
+    final jewelers = auth.joyeros;
+    for (final u in jewelers) {
+      if (u.history != null && u.history!.isNotEmpty) {
+        hasRecords = true;
+        for (final h in u.history!) {
+          final row = [
+            u.name,
+            u.role,
+            h['status'] ?? '',
+            h['timestamp'] ?? '',
+          ].join(",");
+          csv += "$row\r\n";
+        }
+      }
+    }
+    if (!hasRecords) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("No hay registros de asistencia para exportar.")));
+      return;
+    }
+    Clipboard.setData(ClipboardData(text: csv));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text("Bitácora de asistencia copiada al portapapeles en formato CSV 📋"),
+      backgroundColor: AppColors.success,
+    ));
   }
 
   @override

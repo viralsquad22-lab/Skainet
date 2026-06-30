@@ -239,11 +239,14 @@ function App() {
     try {
       const resp = await fetch(`${API_URL}/users/${currentUser.id}/status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(currentUser.access_token ? { 'Authorization': `Bearer ${currentUser.access_token}` } : {})
+        },
         body: JSON.stringify({ status })
       });
       const updatedUser = await resp.json();
-      setCurrentUser(updatedUser);
+      setCurrentUser({ ...updatedUser, access_token: currentUser.access_token }); // Preservar token
       fetchUsers();
     } catch (err) {
       alert("Error al actualizar estado");
@@ -2024,6 +2027,7 @@ function App() {
             allUsers={allUsers}
             fetchUsers={fetchUsers}
             API_URL={API_URL}
+            token={currentUser?.access_token}
           />
         )}
       </main>

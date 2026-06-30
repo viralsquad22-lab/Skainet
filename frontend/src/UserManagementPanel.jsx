@@ -9,7 +9,7 @@ const SECURITY_QUESTIONS_POOL = [
   "¿Cuál es el nombre de tu mejor amigo de la infancia?"
 ];
 
-export default function UserManagementPanel({ allUsers, fetchUsers, API_URL }) {
+export default function UserManagementPanel({ allUsers, fetchUsers, API_URL, token }) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -106,7 +106,10 @@ export default function UserManagementPanel({ allUsers, fetchUsers, API_URL }) {
 
       const resp = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify(payload)
       });
 
@@ -121,6 +124,8 @@ export default function UserManagementPanel({ allUsers, fetchUsers, API_URL }) {
     } catch (err) {
       console.error(err);
       alert("Error de conexión");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -131,7 +136,10 @@ export default function UserManagementPanel({ allUsers, fetchUsers, API_URL }) {
 
     try {
       const resp = await fetch(`${API_URL}/users/${userIdToDelete}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
       });
 
       if (resp.ok) {

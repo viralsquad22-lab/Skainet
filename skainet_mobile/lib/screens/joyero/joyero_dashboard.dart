@@ -36,7 +36,6 @@ class _JoyeroDashboardState extends State<JoyeroDashboard> {
   void _logout() {
     context.read<WorkshopProvider>().stopPolling();
     context.read<AuthProvider>().logout();
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
   }
 
   @override

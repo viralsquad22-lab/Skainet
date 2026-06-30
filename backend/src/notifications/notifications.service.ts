@@ -8,7 +8,7 @@ export class NotificationsService {
   constructor(private readonly usersService: UsersService) {}
 
   async notifyAdmins(message: string) {
-    const users = this.usersService.findAll();
+    const users = await this.usersService.findAll();
     const admins = users.filter(u => 
       u.role === UserRole.ADMIN || u.role === UserRole.DUENO
     );

@@ -1,65 +1,77 @@
-import { Controller, Get, Patch, Post, Delete, Param, Body, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Patch, Post, Delete, Param, Body, NotFoundException, BadRequestException, UseGuards, Inject, forwardRef } from '@nestjs/common';
 import { UsersService, UserStatus } from './users.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { AuthService } from '../auth/auth.service';
+import { ApiTags } from '@nestjs/swagger';
 
+import { CreateUserDto } from './dto/create-user.dto';
+
+@ApiTags('Usuarios')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    @Inject(forwardRef(() => AuthService))
+    private readonly authService: AuthService,
+  ) {}
 
   @Get()
-  findAll() {
+  async findAll() {
     return this.usersService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    const user = this.usersService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    const user = await this.usersService.findOne(id);
     if (!user) throw new NotFoundException('Usuario no encontrado');
     return user;
   }
 
   @Patch(':id/status')
-  updateStatus(
+  @UseGuards(JwtAuthGuard)
+  async updateStatus(
     @Param('id') id: string,
     @Body('status') status: UserStatus,
   ) {
-    const user = this.usersService.updateStatus(id, status);
+    const user = await this.usersService.updateStatus(id, status);
     if (!user) throw new NotFoundException('Usuario no encontrado');
     return user;
   }
 
   @Post('login')
-  login(@Body() body: { id: string; password: string }) {
-    const user = this.usersService.validatePassword(body.id, body.password);
-    if (!user) throw new NotFoundException('Credenciales inválidas');
-    return user;
+  async login(@Body() body: { id: string; password: string }) {
+    return this.authService.login(body.id, body.password);
   }
 
   @Post()
-  create(@Body() body: any) {
+  @UseGuards(JwtAuthGuard)
+  async create(@Body() body: CreateUserDto) {
     try {
-      return this.usersService.create(body);
+      return await this.usersService.create(body as any);
     } catch (err) {
       throw new BadRequestException(err.message);
     }
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() body: any) {
-    const user = this.usersService.update(id, body);
+  @UseGuards(JwtAuthGuard)
+  async update(@Param('id') id: string, @Body() body: any) {
+    const user = await this.usersService.update(id, body);
     if (!user) throw new NotFoundException('Usuario no encontrado');
     return user;
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    const success = this.usersService.remove(id);
+  @UseGuards(JwtAuthGuard)
+  async remove(@Param('id') id: string) {
+    const success = await this.usersService.remove(id);
     if (!success) throw new NotFoundException('Usuario no encontrado');
     return { success };
   }
 
   @Post(':id/recovery')
-  validateRecovery(@Param('id') id: string, @Body('answers') answers: string[]) {
-    const user = this.usersService.validateRecovery(id, answers);
+  async validateRecovery(@Param('id') id: string, @Body('answers') answers: string[]) {
+    const user = await this.usersService.validateRecovery(id, answers);
     if (!user) throw new BadRequestException('Las respuestas de seguridad son incorrectas o no coinciden.');
     return { 
       success: true, 

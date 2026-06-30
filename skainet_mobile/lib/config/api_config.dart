@@ -14,7 +14,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 /// URL del backend desplegado en Render.com
 /// ⚡ CAMBIA ESTA URL después de desplegar en Render
-const String _cloudUrl = 'https://skainet-bb2u.onrender.com';
+const String _cloudUrl = 'http://10.31.30.34:3000';
 
 /// URL local para desarrollo en Chrome
 const String _localUrl = 'http://localhost:3000';
